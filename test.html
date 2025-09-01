@@ -1,0 +1,942 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kwitansi BOS Madrasah - Viewer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Times New Roman', Times, serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .controls-panel {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .load-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 14px;
+        }
+
+        .load-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .nav-controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .nav-btn {
+            background: #4a5568;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .nav-btn:hover:not(:disabled) {
+            background: #2d3748;
+            transform: translateY(-1px);
+        }
+
+        .nav-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .record-info {
+            font-weight: 600;
+            color: #2d3748;
+            font-size: 14px;
+            padding: 10px 15px;
+            background: #f7fafc;
+            border-radius: 6px;
+            border: 2px solid #e2e8f0;
+        }
+
+        .kwitansi-container {
+            background: #f5f5f5;
+            border-radius: 15px;
+            padding: 40px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+            max-width: 800px;
+            width: 100%;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .kwitansi-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="1" fill="%23e2e8f0" opacity="0.3"/></svg>') repeat;
+            background-size: 20px 20px;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .kwitansi-content {
+            position: relative;
+            z-index: 1;
+            background: white;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            border-bottom: 3px solid #2d3748;
+            padding-bottom: 20px;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            font-weight: bold;
+            color: #2d3748;
+            letter-spacing: 2px;
+            margin-bottom: 5px;
+        }
+
+        .date-section {
+            text-align: right;
+            margin-bottom: 30px;
+            font-size: 16px;
+            color: #4a5568;
+        }
+
+        .form-row {
+            display: flex;
+            margin-bottom: 20px;
+            min-height: 30px;
+            align-items: center;
+        }
+
+        .form-label {
+            flex: 0 0 200px;
+            font-size: 16px;
+            color: #2d3748;
+            font-weight: 500;
+        }
+
+        .form-colon {
+            flex: 0 0 20px;
+            text-align: center;
+            font-size: 16px;
+            color: #2d3748;
+            font-weight: bold;
+        }
+
+        .form-value {
+            flex: 1;
+            font-size: 16px;
+            color: #2d3748;
+            text-align: right;
+            font-weight: 500;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #4a5568;
+            min-height: 25px;
+            display: flex;
+            align-items: flex-end;
+            justify-content: flex-end;
+        }
+
+        .signatures {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 60px;
+            margin-bottom: 40px;
+        }
+
+        .signature-section {
+            text-align: center;
+            flex: 0 0 45%;
+        }
+
+        .signature-title {
+            font-size: 14px;
+            color: #4a5568;
+            margin-bottom: 80px;
+        }
+
+        .signature-name {
+            font-size: 16px;
+            color: #2d3748;
+            font-weight: 600;
+            border-bottom: 1px solid #2d3748;
+            padding-bottom: 5px;
+        }
+
+        .loading-state {
+            text-align: center;
+            padding: 40px;
+            color: #718096;
+        }
+
+        .error-state {
+            text-align: center;
+            padding: 40px;
+            color: #e53e3e;
+            background: #fed7d7;
+            border-radius: 8px;
+            margin: 20px;
+        }
+
+        .print-btn {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: #38a169;
+            color: white;
+            border: none;
+            padding: 15px 20px;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 5px 15px rgba(56, 161, 105, 0.4);
+            font-weight: 600;
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+
+        .print-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(56, 161, 105, 0.6);
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+
+        .status-loading {
+            background: #fbb424;
+            animation: pulse 2s infinite;
+        }
+
+        .status-success {
+            background: #38a169;
+        }
+
+        .status-error {
+            background: #e53e3e;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        /* Print styles */
+        @media print {
+            body {
+                background: white !important;
+                padding: 0 !important;
+            }
+            
+            .controls-panel,
+            .print-btn {
+                display: none !important;
+            }
+            
+            .kwitansi-container {
+                box-shadow: none !important;
+                border-radius: 0 !important;
+                max-width: none !important;
+                width: 100% !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                background: white !important;
+            }
+            
+            .kwitansi-content {
+                box-shadow: none !important;
+                border-radius: 0 !important;
+                padding: 30px !important;
+            }
+        }
+
+        /* Mobile responsive */
+        @media (max-width: 768px) {
+            .controls-panel {
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .nav-controls {
+                flex-direction: column;
+                width: 100%;
+            }
+            
+            .kwitansi-container {
+                margin: 10px;
+                padding: 20px;
+            }
+            
+            .kwitansi-content {
+                padding: 20px;
+            }
+            
+            .header h1 {
+                font-size: 24px;
+            }
+            
+            .form-row {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 5px;
+            }
+            
+            .form-label {
+                flex: none;
+            }
+            
+            .form-colon {
+                display: none;
+            }
+            
+            .form-value {
+                text-align: left;
+            }
+            
+            .signatures {
+                flex-direction: column;
+                gap: 40px;
+            }
+            
+            .signature-section {
+                flex: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="controls-panel">
+        <button class="load-btn" onclick="loadSpreadsheetData()">
+            📊 Load Data dari Spreadsheet
+        </button>
+        
+        <div class="nav-controls">
+            <button class="nav-btn" id="prevBtn" onclick="navigateRecord(-1)" disabled>
+                ◀ Previous
+            </button>
+            
+            <div class="record-info">
+                <span class="status-indicator status-loading" id="statusIndicator"></span>
+                <span id="recordInfo">Belum ada data</span>
+            </div>
+            
+            <button class="nav-btn" id="nextBtn" onclick="navigateRecord(1)" disabled>
+                Next ▶
+            </button>
+        </div>
+    </div>
+
+    <div class="kwitansi-container">
+        <div class="kwitansi-content">
+            <div id="loadingState" class="loading-state">
+                <h3>Klik "Load Data" untuk mengambil data dari spreadsheet</h3>
+                <p>Pastikan spreadsheet sudah berisi data kwitansi</p>
+            </div>
+
+            <div id="errorState" class="error-state" style="display: none;">
+                <h3>❌ Gagal memuat data</h3>
+                <p id="errorMessage">Terjadi kesalahan saat mengambil data</p>
+            </div>
+
+            <div id="kwitansiContent" style="display: none;">
+                <div class="header">
+                    <h1>KWITANSI BOS MADRASAH</h1>
+                </div>
+
+                <div class="date-section">
+                    Tanggal : <span id="tanggalKwitansi">26-07-2025</span>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-label">No Referensi</div>
+                    <div class="form-colon">:</div>
+                    <div class="form-value" id="noReferensi">BOS/001/II/2025</div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-label">Suda Terima Dari</div>
+                    <div class="form-colon">:</div>
+                    <div class="form-value" id="sudaTerima">Bendahara BOS</div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-label">Sejumlah</div>
+                    <div class="form-colon">:</div>
+                    <div class="form-value" id="sejumlah">Rp. 1.000.000</div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-label">Terbilang</div>
+                    <div class="form-colon">:</div>
+                    <div class="form-value" id="terbilang">Satu Juta Rupiah</div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-label">Untuk Pembayaran</div>
+                    <div class="form-colon">:</div>
+                    <div class="form-value" id="untukPembayaran">Belanja ATK</div>
+                </div>
+
+                <div class="signatures">
+                    <div class="signature-section">
+                        <div class="signature-title">Mengetahui<br>Kepala Madrasah</div>
+                        <div class="signature-name">Sutisna Abdullatief, S.Pd.I</div>
+                    </div>
+
+                    <div class="signature-section">
+                        <div class="signature-title">Lunas Bayar<br>Bendahara BOS Madrasah</div>
+                        <div class="signature-name">Jon Hasan, S.Pd.I</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <button class="print-btn" onclick="printKwitansi()" id="printBtn" style="display: none;">
+        🖨️ Print
+    </button>
+
+    <script>
+        // Data storage
+        let spreadsheetData = [];
+        let currentIndex = 0;
+
+        // Configuration - UPDATE THESE WITH YOUR ACTUAL VALUES
+        const CONFIG = {
+            SPREADSHEET_ID: 'YOUR_SPREADSHEET_ID_HERE', // Ganti dengan ID spreadsheet Anda
+            SHEET_NAME: 'Kwitansi BOS',
+            // Option 1: Direct Google Sheets API (for public sheets)
+            USE_DIRECT_API: true,
+            // Option 2: Apps Script Proxy (jika direct API tidak bekerja)
+            APPS_SCRIPT_URL: 'https://script.google.com/macros/s/YOUR_APPS_SCRIPT_ID/exec' // Opsional
+        };
+
+        /**
+         * Load data from Google Spreadsheet using JSONP to avoid CORS
+         */
+        function loadSpreadsheetData() {
+            const statusIndicator = document.getElementById('statusIndicator');
+            const recordInfo = document.getElementById('recordInfo');
+            const loadingState = document.getElementById('loadingState');
+            const errorState = document.getElementById('errorState');
+            const kwitansiContent = document.getElementById('kwitansiContent');
+
+            // Update UI to loading state
+            statusIndicator.className = 'status-indicator status-loading';
+            recordInfo.textContent = 'Loading...';
+            loadingState.style.display = 'block';
+            errorState.style.display = 'none';
+            kwitansiContent.style.display = 'none';
+            document.getElementById('printBtn').style.display = 'none';
+
+            if (CONFIG.USE_DIRECT_API) {
+                loadViaDirectAPI();
+            } else {
+                loadViaAppsScript();
+            }
+        }
+
+        /**
+         * Method 1: Direct Google Sheets API with JSONP
+         */
+        function loadViaDirectAPI() {
+            try {
+                // Create unique callback name
+                const callbackName = 'googleSheetsCallback_' + Date.now();
+                
+                // Construct JSONP URL for public spreadsheet
+                const apiUrl = `https://docs.google.com/spreadsheets/d/${CONFIG.SPREADSHEET_ID}/gviz/tq?tqx=out:json&headers=1&callback=${callbackName}`;
+                
+                console.log('Method 1: Fetching via Direct API:', apiUrl);
+
+                // Create global callback function
+                window[callbackName] = function(response) {
+                    try {
+                        // Clean up
+                        delete window[callbackName];
+                        document.head.removeChild(script);
+
+                        if (!response.table || !response.table.rows) {
+                            throw new Error('No data found in spreadsheet. Pastikan spreadsheet sudah public dan berisi data.');
+                        }
+
+                        // Process the data
+                        spreadsheetData = processSpreadsheetData(response.table.rows);
+                        
+                        if (spreadsheetData.length === 0) {
+                            throw new Error('No valid records found in spreadsheet');
+                        }
+
+                        // Success - display data
+                        currentIndex = 0;
+                        updateUI();
+                        displayCurrentRecord();
+                        console.log(`✅ Loaded ${spreadsheetData.length} records via Direct API`);
+
+                    } catch (error) {
+                        console.error('Error processing spreadsheet data:', error);
+                        // Try fallback method
+                        console.log('Trying fallback method...');
+                        CONFIG.USE_DIRECT_API = false;
+                        loadViaAppsScript();
+                    }
+                };
+
+                // Set timeout for error handling
+                const timeoutId = setTimeout(() => {
+                    if (window[callbackName]) {
+                        delete window[callbackName];
+                        if (document.head.contains(script)) {
+                            document.head.removeChild(script);
+                        }
+                        console.log('Direct API timeout, trying Apps Script method...');
+                        CONFIG.USE_DIRECT_API = false;
+                        loadViaAppsScript();
+                    }
+                }, 10000);
+
+                // Create and append script tag for JSONP
+                const script = document.createElement('script');
+                script.src = apiUrl;
+                script.onerror = function() {
+                    clearTimeout(timeoutId);
+                    if (window[callbackName]) {
+                        delete window[callbackName];
+                        console.log('Direct API failed, trying Apps Script method...');
+                        CONFIG.USE_DIRECT_API = false;
+                        loadViaAppsScript();
+                    }
+                };
+
+                // Clear timeout on successful load
+                const originalCallback = window[callbackName];
+                window[callbackName] = function(response) {
+                    clearTimeout(timeoutId);
+                    originalCallback(response);
+                };
+
+                document.head.appendChild(script);
+
+            } catch (error) {
+                console.error('Error in loadViaDirectAPI:', error);
+                CONFIG.USE_DIRECT_API = false;
+                loadViaAppsScript();
+            }
+        }
+
+        /**
+         * Method 2: Via Apps Script Proxy (alternative method)
+         */
+        async function loadViaAppsScript() {
+            try {
+                console.log('Method 2: Fetching via Apps Script Proxy');
+
+                if (!CONFIG.APPS_SCRIPT_URL || CONFIG.APPS_SCRIPT_URL.includes('YOUR_APPS_SCRIPT_ID')) {
+                    throw new Error('Apps Script URL tidak dikonfigurasi. Gunakan method CSV export atau setup Apps Script proxy.');
+                }
+
+                const response = await fetch(CONFIG.APPS_SCRIPT_URL + '?action=getData', {
+                    method: 'GET',
+                    mode: 'cors'
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                
+                if (!data.success) {
+                    throw new Error(data.message || 'Failed to get data from Apps Script');
+                }
+
+                spreadsheetData = data.records || [];
+                
+                if (spreadsheetData.length === 0) {
+                    throw new Error('No records found');
+                }
+
+                // Success - display data
+                currentIndex = 0;
+                updateUI();
+                displayCurrentRecord();
+                console.log(`✅ Loaded ${spreadsheetData.length} records via Apps Script`);
+
+            } catch (error) {
+                console.error('Apps Script method failed:', error);
+                showManualDataEntry();
+            }
+        }
+
+        /**
+         * Method 3: Manual CSV data entry (fallback)
+         */
+        function showManualDataEntry() {
+            const errorState = document.getElementById('errorState');
+            const errorMessage = document.getElementById('errorMessage');
+            
+            errorMessage.innerHTML = `
+                <strong>⚠️ Tidak bisa mengakses spreadsheet secara otomatis</strong><br><br>
+                <strong>Solusi alternatif:</strong><br>
+                1. Buka spreadsheet Google Sheets Anda<br>
+                2. File → Download → CSV (.csv)<br>
+                3. Atau setup Apps Script proxy (lihat panduan)<br><br>
+                <button onclick="showCSVUpload()" style="padding: 10px 20px; background: #4299e1; color: white; border: none; border-radius: 5px; cursor: pointer;">
+                    📁 Upload File CSV
+                </button><br><br>
+                <strong>Atau copy-paste data manual:</strong><br>
+                <button onclick="showManualInput()" style="padding: 10px 20px; background: #38a169; color: white; border: none; border-radius: 5px; cursor: pointer; margin-top: 5px;">
+                    ✏️ Input Data Manual
+                </button>
+            `;
+            
+            showError('Koneksi spreadsheet gagal');
+        }
+
+        /**
+         * Show CSV upload interface
+         */
+        function showCSVUpload() {
+            const errorMessage = document.getElementById('errorMessage');
+            errorMessage.innerHTML = `
+                <strong>📁 Upload File CSV</strong><br><br>
+                <input type="file" id="csvFile" accept=".csv" style="margin: 10px 0;">
+                <br>
+                <button onclick="loadFromCSV()" style="padding: 8px 16px; background: #4299e1; color: white; border: none; border-radius: 5px; cursor: pointer;">
+                    Load dari CSV
+                </button>
+                <button onclick="loadSpreadsheetData()" style="padding: 8px 16px; background: #718096; color: white; border: none; border-radius: 5px; cursor: pointer; margin-left: 10px;">
+                    ← Kembali
+                </button>
+            `;
+        }
+
+        /**
+         * Load data from uploaded CSV file
+         */
+        function loadFromCSV() {
+            const fileInput = document.getElementById('csvFile');
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                alert('Pilih file CSV terlebih dahulu');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const csv = e.target.result;
+                    const lines = csv.split('\n');
+                    
+                    // Skip header and process data
+                    spreadsheetData = [];
+                    for (let i = 1; i < lines.length; i++) {
+                        const line = lines[i].trim();
+                        if (!line) continue;
+                        
+                        const columns = parseCSVLine(line);
+                        if (columns.length >= 5) {
+                            spreadsheetData.push({
+                                tanggal: formatDate(columns[0]),
+                                nomorReferensi: columns[1],
+                                sejumlah: columns[2],
+                                terbilang: columns[3],
+                                untukPembayaran: columns[4]
+                            });
+                        }
+                    }
+                    
+                    if (spreadsheetData.length === 0) {
+                        throw new Error('No valid data found in CSV');
+                    }
+
+                    // Success - display data
+                    currentIndex = 0;
+                    updateUI();
+                    displayCurrentRecord();
+                    console.log(`✅ Loaded ${spreadsheetData.length} records from CSV`);
+
+                } catch (error) {
+                    console.error('Error loading CSV:', error);
+                    alert('Error loading CSV: ' + error.message);
+                }
+            };
+            
+            reader.readAsText(file);
+        }
+
+        /**
+         * Simple CSV line parser
+         */
+        function parseCSVLine(line) {
+            const result = [];
+            let current = '';
+            let inQuotes = false;
+            
+            for (let i = 0; i < line.length; i++) {
+                const char = line[i];
+                
+                if (char === '"') {
+                    inQuotes = !inQuotes;
+                } else if (char === ',' && !inQuotes) {
+                    result.push(current.trim());
+                    current = '';
+                } else {
+                    current += char;
+                }
+            }
+            
+            result.push(current.trim());
+            return result;
+        }
+
+        /**
+         * Show error state
+         */
+        function showError(message) {
+            const statusIndicator = document.getElementById('statusIndicator');
+            const recordInfo = document.getElementById('recordInfo');
+            const loadingState = document.getElementById('loadingState');
+            const errorState = document.getElementById('errorState');
+            const kwitansiContent = document.getElementById('kwitansiContent');
+
+            statusIndicator.className = 'status-indicator status-error';
+            recordInfo.textContent = 'Error';
+            loadingState.style.display = 'none';
+            errorState.style.display = 'block';
+            kwitansiContent.style.display = 'none';
+            
+            document.getElementById('errorMessage').textContent = message;
+        }
+
+        /**
+         * Process raw spreadsheet data
+         */
+        function processSpreadsheetData(rows) {
+            const processedData = [];
+            
+            // Skip header row (index 0)
+            for (let i = 1; i < rows.length; i++) {
+                const row = rows[i];
+                
+                if (!row.c || !row.c[0] || !row.c[0].v) {
+                    continue; // Skip empty rows
+                }
+
+                const record = {
+                    tanggal: formatDate(row.c[0]?.v || ''),
+                    nomorReferensi: row.c[1]?.v || '',
+                    sejumlah: row.c[2]?.v || '',
+                    terbilang: row.c[3]?.v || '',
+                    untukPembayaran: row.c[4]?.v || '',
+                    timestamp: row.c[5]?.v || ''
+                };
+
+                // Only add records with required fields
+                if (record.tanggal && record.nomorReferensi && record.sejumlah) {
+                    processedData.push(record);
+                }
+            }
+
+            return processedData;
+        }
+
+        /**
+         * Format date for display
+         */
+        function formatDate(dateValue) {
+            if (!dateValue) return '';
+            
+            try {
+                // Handle different date formats
+                let date;
+                
+                if (typeof dateValue === 'string') {
+                    // If it's already in dd/mm/yyyy format
+                    if (dateValue.match(/^\d{2}\/\d{2}\/\d{4}$/)) {
+                        return dateValue;
+                    }
+                    // Parse other string formats
+                    date = new Date(dateValue);
+                } else if (typeof dateValue === 'number') {
+                    // Google Sheets date serial number
+                    date = new Date((dateValue - 25569) * 86400 * 1000);
+                } else if (dateValue instanceof Date) {
+                    date = dateValue;
+                } else {
+                    return dateValue.toString();
+                }
+
+                // Format to dd-mm-yyyy for display
+                const day = String(date.getDate()).padStart(2, '0');
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const year = date.getFullYear();
+                
+                return `${day}-${month}-${year}`;
+            } catch (error) {
+                console.error('Date formatting error:', error);
+                return dateValue.toString();
+            }
+        }
+
+        /**
+         * Navigate between records
+         */
+        function navigateRecord(direction) {
+            if (spreadsheetData.length === 0) return;
+
+            const newIndex = currentIndex + direction;
+            
+            if (newIndex >= 0 && newIndex < spreadsheetData.length) {
+                currentIndex = newIndex;
+                displayCurrentRecord();
+                updateUI();
+            }
+        }
+
+        /**
+         * Display current record in kwitansi format
+         */
+        function displayCurrentRecord() {
+            if (spreadsheetData.length === 0 || !spreadsheetData[currentIndex]) {
+                return;
+            }
+
+            const record = spreadsheetData[currentIndex];
+
+            // Update kwitansi content
+            document.getElementById('tanggalKwitansi').textContent = record.tanggal;
+            document.getElementById('noReferensi').textContent = record.nomorReferensi;
+            document.getElementById('sudaTerima').textContent = 'Bendahara BOS'; // Static value
+            
+            // Format sejumlah with "Rp." prefix
+            const formattedAmount = record.sejumlah.startsWith('Rp.') ? 
+                record.sejumlah : `Rp. ${record.sejumlah}`;
+            document.getElementById('sejumlah').textContent = formattedAmount;
+            
+            document.getElementById('terbilang').textContent = record.terbilang;
+            document.getElementById('untukPembayaran').textContent = record.untukPembayaran;
+
+            // Show kwitansi content
+            document.getElementById('loadingState').style.display = 'none';
+            document.getElementById('errorState').style.display = 'none';
+            document.getElementById('kwitansiContent').style.display = 'block';
+            document.getElementById('printBtn').style.display = 'block';
+        }
+
+        /**
+         * Update UI elements (navigation buttons, record info)
+         */
+        function updateUI() {
+            const prevBtn = document.getElementById('prevBtn');
+            const nextBtn = document.getElementById('nextBtn');
+            const recordInfo = document.getElementById('recordInfo');
+            const statusIndicator = document.getElementById('statusIndicator');
+
+            if (spreadsheetData.length === 0) {
+                prevBtn.disabled = true;
+                nextBtn.disabled = true;
+                recordInfo.textContent = 'Tidak ada data';
+                statusIndicator.className = 'status-indicator status-error';
+                return;
+            }
+
+            // Update navigation buttons
+            prevBtn.disabled = currentIndex <= 0;
+            nextBtn.disabled = currentIndex >= spreadsheetData.length - 1;
+
+            // Update record info
+            recordInfo.textContent = `${currentIndex + 1} dari ${spreadsheetData.length} kwitansi`;
+            statusIndicator.className = 'status-indicator status-success';
+        }
+
+        /**
+         * Print current kwitansi
+         */
+        function printKwitansi() {
+            window.print();
+        }
+
+        /**
+         * Keyboard navigation
+         */
+        document.addEventListener('keydown', function(event) {
+            if (spreadsheetData.length === 0) return;
+
+            switch(event.key) {
+                case 'ArrowLeft':
+                    event.preventDefault();
+                    navigateRecord(-1);
+                    break;
+                case 'ArrowRight':
+                    event.preventDefault();
+                    navigateRecord(1);
+                    break;
+                case 'p':
+                case 'P':
+                    if (event.ctrlKey || event.metaKey) {
+                        event.preventDefault();
+                        printKwitansi();
+                    }
+                    break;
+            }
+        });
+
+        // Initialize
+        console.log('Kwitansi Viewer ready. Click "Load Data" to fetch spreadsheet data.');
+        console.log('Keyboard shortcuts: ← → for navigation, Ctrl+P to print');
+    </script>
+</body>
+</html>
